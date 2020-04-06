@@ -135,8 +135,29 @@ type Address struct {
 	Country       string
 }
 
+type options struct {
+	exchangeFields int
+}
+
+// ParserOption is used to customize the log parser.
+type ParserOption func(*options)
+
+// WithExchangeFields sets how many space delimited fields to expect in the exchange column.
+func WithExchangeFields(exchangeFields int) ParserOption {
+	return func(o *options) {
+		o.exchangeFields = exchangeFields
+	}
+}
+
 // ParseLog attempts to parse the data from the reader into a Log structure.
-func ParseLog(r io.Reader) (Log, error) {
+func ParseLog(r io.Reader, opts ...ParserOption) (Log, error) {
+	opt := &options{
+		exchangeFields: 1,
+	}
+	for _, o := range opts {
+		o(opt)
+	}
+
 	b, err := ioutil.ReadAll(r)
 	if err != nil {
 		return Log{}, err
@@ -219,7 +240,7 @@ func ParseLog(r io.Reader) (Log, error) {
 		case "OPERATORS:":
 			l.Operators = append(l.Operators, operatorsField(strings.Join(lineParts[1:], " "))...)
 		case "QSO:":
-			qso, err := NewQSO(line)
+			qso, err := NewQSO(line, opt.exchangeFields)
 			if err != nil {
 				return Log{}, newLineError(err, lineNum)
 			}
@@ -230,7 +251,7 @@ func ParseLog(r io.Reader) (Log, error) {
 		case "START-OF-LOG:":
 			l.Version = lineParts[1]
 		case "X-QSO:":
-			qso, err := NewQSO(line)
+			qso, err := NewQSO(line, opt.exchangeFields)
 			if err != nil {
 				return Log{}, newLineError(err, lineNum)
 			}

@@ -96,4 +96,17 @@ func TestLog(t *testing.T) {
 		require.Equal(t, "7250", l.XQSOs[0].Frequency)
 		require.Equal(t, "PH", l.XQSOs[0].Mode)
 	})
+
+	t.Run("generated.log", func(t *testing.T) {
+		fh, err := os.Open("testdata/generated.log")
+		require.NoError(t, err)
+		defer fh.Close()
+
+		l, err := ParseLog(fh, WithExchangeFields(2))
+		require.NoError(t, err)
+
+		require.Len(t, l.QSOs, 1)
+		require.Equal(t, "JILL MA", l.QSOs[0].RxInfo.Exchange)
+		require.Equal(t, "JACK CA", l.QSOs[0].TxInfo.Exchange)
+	})
 }

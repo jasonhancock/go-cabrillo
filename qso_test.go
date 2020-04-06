@@ -61,7 +61,7 @@ func TestRST(t *testing.T) {
 func TestQSO(t *testing.T) {
 	t.Run("NewQSO", func(t *testing.T) {
 		t.Run("normal", func(t *testing.T) {
-			qso, err := NewQSO("QSO:  7030 CW 2017-11-25 2134 K1IR          599 5      IQ3R          599 15\n")
+			qso, err := NewQSO("QSO:  7030 CW 2017-11-25 2134 K1IR          599 5      IQ3R          599 15\n", 1)
 			require.NoError(t, err)
 			require.Equal(t, "7030", qso.Frequency)
 			require.Equal(t, "CW", qso.Mode)
@@ -79,7 +79,7 @@ func TestQSO(t *testing.T) {
 		})
 
 		t.Run("normal-with-operator", func(t *testing.T) {
-			qso, err := NewQSO("QSO:  7250 PH 2000-10-26 0711 AA1ZZZ          59  05     WA6MIC        59  03     0")
+			qso, err := NewQSO("QSO:  7250 PH 2000-10-26 0711 AA1ZZZ          59  05     WA6MIC        59  03     0", 1)
 			require.NoError(t, err)
 			require.Equal(t, "7250", qso.Frequency)
 			require.Equal(t, "PH", qso.Mode)
@@ -94,6 +94,60 @@ func TestQSO(t *testing.T) {
 			require.Equal(t, "03", qso.RxInfo.Exchange)
 
 			require.Equal(t, 0, qso.Transmitter)
+		})
+
+		t.Run("exchange with space", func(t *testing.T) {
+			qso, err := NewQSO("QSO:  7030 CW 2017-11-25 2134 K1IR          599 JACK  CA      IQ3R          599 JILL      MA\n", 2)
+			require.NoError(t, err)
+			require.Equal(t, "7030", qso.Frequency)
+			require.Equal(t, "CW", qso.Mode)
+			require.Equal(t, "201711252134", qso.Timestamp.Format("200601021504"))
+
+			require.Equal(t, "K1IR", qso.TxInfo.Callsign)
+			require.Equal(t, "599", qso.TxInfo.SignalReport.String())
+			require.Equal(t, "JACK CA", qso.TxInfo.Exchange)
+
+			require.Equal(t, "IQ3R", qso.RxInfo.Callsign)
+			require.Equal(t, "599", qso.RxInfo.SignalReport.String())
+			require.Equal(t, "JILL MA", qso.RxInfo.Exchange)
+
+			require.Equal(t, 0, qso.Transmitter)
+		})
+
+		t.Run("exchange with multi spaces", func(t *testing.T) {
+			qso, err := NewQSO("QSO:  7030 CW 2017-11-25 2134 K1IR          599 JACK DOE CA      IQ3R          599 JILL    DOE  MA\n", 3)
+			require.NoError(t, err)
+			require.Equal(t, "7030", qso.Frequency)
+			require.Equal(t, "CW", qso.Mode)
+			require.Equal(t, "201711252134", qso.Timestamp.Format("200601021504"))
+
+			require.Equal(t, "K1IR", qso.TxInfo.Callsign)
+			require.Equal(t, "599", qso.TxInfo.SignalReport.String())
+			require.Equal(t, "JACK DOE CA", qso.TxInfo.Exchange)
+
+			require.Equal(t, "IQ3R", qso.RxInfo.Callsign)
+			require.Equal(t, "599", qso.RxInfo.SignalReport.String())
+			require.Equal(t, "JILL DOE MA", qso.RxInfo.Exchange)
+
+			require.Equal(t, 0, qso.Transmitter)
+		})
+
+		t.Run("exchange with multi spaces and transmitter", func(t *testing.T) {
+			qso, err := NewQSO("QSO:  7030 CW 2017-11-25 2134 K1IR          599 JACK DOE CA      IQ3R          599 JILL    DOE  MA 2\n", 3)
+			require.NoError(t, err)
+			require.Equal(t, "7030", qso.Frequency)
+			require.Equal(t, "CW", qso.Mode)
+			require.Equal(t, "201711252134", qso.Timestamp.Format("200601021504"))
+
+			require.Equal(t, "K1IR", qso.TxInfo.Callsign)
+			require.Equal(t, "599", qso.TxInfo.SignalReport.String())
+			require.Equal(t, "JACK DOE CA", qso.TxInfo.Exchange)
+
+			require.Equal(t, "IQ3R", qso.RxInfo.Callsign)
+			require.Equal(t, "599", qso.RxInfo.SignalReport.String())
+			require.Equal(t, "JILL DOE MA", qso.RxInfo.Exchange)
+
+			require.Equal(t, 2, qso.Transmitter)
 		})
 	})
 }

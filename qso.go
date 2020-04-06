@@ -70,12 +70,24 @@ type Info struct {
 	Exchange     string
 }
 
-// NewQSO parses a line from a cabrillo log into a
-func NewQSO(line string) (QSO, error) {
+// NewQSO parses a line from a cabrillo log into a QSQ struct. exchangeFields
+// specifies the number of fields in the exchange. If the exchange was only a
+// serial number, this should be set to 1. If the exchange is a name, serial
+// number, and QTH all delimited by spaces, set this to 3.
+func NewQSO(line string, exchangeFields int) (QSO, error) {
 	fields := strings.Fields(line)
 
-	if len(fields) != 11 && len(fields) != 12 {
-		return QSO{}, errors.Errorf("invalid number of fields in QSO. Got %d, expected 11 or 12 - %q", len(fields), line)
+	fieldsMin := 9 + exchangeFields*2
+	fieldsMax := 10 + exchangeFields*2
+
+	if len(fields) != fieldsMin && len(fields) != fieldsMax {
+		return QSO{}, errors.Errorf(
+			"invalid number of fields in QSO. Got %d, expected %d or %d - %q",
+			len(fields),
+			fieldsMin,
+			fieldsMax,
+			line,
+		)
 	}
 
 	qso := QSO{
@@ -83,11 +95,11 @@ func NewQSO(line string) (QSO, error) {
 		Mode:      fields[2],
 		TxInfo: Info{
 			Callsign: fields[5],
-			Exchange: fields[7],
+			Exchange: strings.Join(fields[7:7+exchangeFields], " "),
 		},
 		RxInfo: Info{
-			Callsign: fields[8],
-			Exchange: fields[10],
+			Callsign: fields[7+exchangeFields],
+			Exchange: strings.Join(fields[7+exchangeFields+2:7+exchangeFields+2+exchangeFields], " "),
 		},
 	}
 
@@ -102,13 +114,13 @@ func NewQSO(line string) (QSO, error) {
 		return QSO{}, errors.Wrap(err, "parsing tx RST")
 	}
 
-	qso.RxInfo.SignalReport, err = NewRST(fields[9])
+	qso.RxInfo.SignalReport, err = NewRST(fields[7+exchangeFields+1])
 	if err != nil {
 		return QSO{}, errors.Wrap(err, "parsing rx RST")
 	}
 
-	if len(fields) == 12 {
-		qso.Transmitter, err = strconv.Atoi(fields[11])
+	if len(fields) == fieldsMax {
+		qso.Transmitter, err = strconv.Atoi(fields[fieldsMax-1])
 		if err != nil {
 			return QSO{}, errors.Wrap(err, "parsing transmitter")
 		}
