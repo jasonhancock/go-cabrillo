@@ -1,12 +1,11 @@
 package cabrillo
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/pkg/errors"
 )
 
 // QSO represents a contact.
@@ -36,18 +35,18 @@ func NewRST(report string) (RST, error) {
 	var err error
 	rst.Readability, err = strconv.Atoi(string(report[0]))
 	if err != nil {
-		return RST{}, errors.Wrapf(err, "parsing readability digit %q", string(report[0]))
+		return RST{}, fmt.Errorf("parsing readability digit %q: %w", string(report[0]), err)
 	}
 
 	rst.Strength, err = strconv.Atoi(string(report[1]))
 	if err != nil {
-		return RST{}, errors.Wrapf(err, "parsing strength digit %q", string(report[1]))
+		return RST{}, fmt.Errorf("parsing strength digit %q: %w", string(report[1]), err)
 	}
 
 	if len(report) == 3 {
 		rst.Tone, err = strconv.Atoi(string(report[2]))
 		if err != nil {
-			return RST{}, errors.Wrapf(err, "parsing tone digit %q", string(report[2]))
+			return RST{}, fmt.Errorf("parsing tone digit %q: %w", string(report[2]), err)
 		}
 	}
 
@@ -81,7 +80,7 @@ func NewQSO(line string, exchangeFields int) (QSO, error) {
 	fieldsMax := 10 + exchangeFields*2
 
 	if len(fields) != fieldsMin && len(fields) != fieldsMax {
-		return QSO{}, errors.Errorf(
+		return QSO{}, fmt.Errorf(
 			"invalid number of fields in QSO. Got %d, expected %d or %d - %q",
 			len(fields),
 			fieldsMin,
@@ -111,18 +110,18 @@ func NewQSO(line string, exchangeFields int) (QSO, error) {
 
 	qso.TxInfo.SignalReport, err = NewRST(fields[6])
 	if err != nil {
-		return QSO{}, errors.Wrap(err, "parsing tx RST")
+		return QSO{}, fmt.Errorf("parsing tx RST: %w", err)
 	}
 
 	qso.RxInfo.SignalReport, err = NewRST(fields[7+exchangeFields+1])
 	if err != nil {
-		return QSO{}, errors.Wrap(err, "parsing rx RST")
+		return QSO{}, fmt.Errorf("parsing rx RST: %w", err)
 	}
 
 	if len(fields) == fieldsMax {
 		qso.Transmitter, err = strconv.Atoi(fields[fieldsMax-1])
 		if err != nil {
-			return QSO{}, errors.Wrap(err, "parsing transmitter")
+			return QSO{}, fmt.Errorf("parsing transmitter: %w", err)
 		}
 	}
 

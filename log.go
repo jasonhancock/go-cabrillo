@@ -3,13 +3,10 @@ package cabrillo
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/mail"
 	"strconv"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 const (
@@ -22,9 +19,9 @@ const (
 )
 
 var (
-	errAddressTooLong      = errors.Errorf("address too long (maximum length %d characters)", maxLengthAddress)
-	errNameTooLong         = errors.Errorf("name too long (maximum length %d characters)", maxLengthName)
-	errTooManyAddressLines = errors.Errorf("only allowed up to %d ADDRESS lines", maxAddressLines)
+	errAddressTooLong      = fmt.Errorf("address too long (maximum length %d characters)", maxLengthAddress)
+	errNameTooLong         = fmt.Errorf("name too long (maximum length %d characters)", maxLengthName)
+	errTooManyAddressLines = fmt.Errorf("only allowed up to %d ADDRESS lines", maxAddressLines)
 )
 
 // Log is a data structure representing an entire Cabrillo formatted Log file.
@@ -80,7 +77,7 @@ func (l *Log) ExtendedField(name string) []string {
 func (l *Log) AddCategory(name, value string) error {
 	// Validate the category name.
 	if _, ok := validCategories[name]; !ok {
-		return errors.Errorf("unknown category %q", name)
+		return fmt.Errorf("unknown category %q", name)
 	}
 
 	for i := range l.Categories {
@@ -158,7 +155,7 @@ func ParseLog(r io.Reader, opts ...ParserOption) (Log, error) {
 		o(opt)
 	}
 
-	b, err := ioutil.ReadAll(r)
+	b, err := io.ReadAll(r)
 	if err != nil {
 		return Log{}, err
 	}
@@ -200,13 +197,13 @@ func ParseLog(r io.Reader, opts ...ParserOption) (Log, error) {
 			var err error
 			l.Certificate, err = parseYN(lineParts[1])
 			if err != nil {
-				return Log{}, errors.Wrap(err, "parsing CERTIFICATE field")
+				return Log{}, fmt.Errorf("parsing CERTIFICATE field: %w", err)
 			}
 		case "CLAIMED-SCORE:":
 			var err error
 			l.ClaimedScore, err = strconv.Atoi(lineParts[1])
 			if err != nil {
-				return Log{}, errors.Wrap(err, "parsing CLAIMED-SCORE field")
+				return Log{}, fmt.Errorf("parsing CLAIMED-SCORE field: %w", err)
 			}
 		case "CLUB:":
 			l.Club = strings.Join(lineParts[1:], " ")
@@ -217,7 +214,7 @@ func ParseLog(r io.Reader, opts ...ParserOption) (Log, error) {
 		case "EMAIL:":
 			addr, err := mail.ParseAddress(strings.Join(lineParts[1:], " "))
 			if err != nil {
-				return Log{}, newLineError(errors.Wrap(err, "parsing email address"), lineNum)
+				return Log{}, newLineError(fmt.Errorf("parsing email address: %w", err), lineNum)
 			}
 			l.Email = addr.Address
 		case "END-OF-LOG:":
@@ -304,7 +301,7 @@ func parseYN(str string) (bool, error) {
 		return false, nil
 	}
 
-	return false, errors.Errorf("cannot parse %q as either YES or NO", str)
+	return false, fmt.Errorf("cannot parse %q as either YES or NO", str)
 }
 
 type lineError struct {

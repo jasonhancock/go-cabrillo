@@ -1,10 +1,10 @@
 package cabrillo
 
 import (
+	"errors"
+	"fmt"
 	"strings"
 	"time"
-
-	"github.com/pkg/errors"
 )
 
 // OffTime is used to indicate off-time.
@@ -30,12 +30,12 @@ func parseOffTime(str string) (OffTime, error) {
 	var err error
 	ot.Begin, err = time.Parse(format, pieces[0]+" "+pieces[1])
 	if err != nil {
-		return OffTime{}, errors.Wrap(err, "parsing begin time")
+		return OffTime{}, fmt.Errorf("parsing begin time: %w", err)
 	}
 
 	ot.End, err = time.Parse(format, pieces[2]+" "+pieces[3])
 	if err != nil {
-		return OffTime{}, errors.Wrap(err, "parsing end time")
+		return OffTime{}, fmt.Errorf("parsing end time: %w", err)
 	}
 
 	return ot, nil
