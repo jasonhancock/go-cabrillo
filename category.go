@@ -1,9 +1,8 @@
 package cabrillo
 
 import (
+	"fmt"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 // Various constants for category names.
@@ -22,15 +21,15 @@ const (
 // The list of categories officially recognized in the specification as a map
 // for quick lookups.
 var validCategories = map[string]struct{}{
-	CategoryAssisted:    struct{}{},
-	CategoryBand:        struct{}{},
-	CategoryMode:        struct{}{},
-	CategoryOperator:    struct{}{},
-	CategoryPower:       struct{}{},
-	CategoryStation:     struct{}{},
-	CategoryTime:        struct{}{},
-	CategoryTransmitter: struct{}{},
-	CategoryOverlay:     struct{}{},
+	CategoryAssisted:    {},
+	CategoryBand:        {},
+	CategoryMode:        {},
+	CategoryOperator:    {},
+	CategoryPower:       {},
+	CategoryStation:     {},
+	CategoryTime:        {},
+	CategoryTransmitter: {},
+	CategoryOverlay:     {},
 }
 
 // Category is a key-value pair of data.
@@ -63,7 +62,7 @@ func (r *CategoryValidationRule) Evaluate(cat Category) error {
 			}
 		}
 		if !found {
-			return errors.Errorf("value %q not in possible values %q", cat.Value, strings.Join(r.PermissibleValues, ","))
+			return fmt.Errorf("value %q not in possible values %q", cat.Value, strings.Join(r.PermissibleValues, ","))
 		}
 	}
 
